@@ -1,0 +1,7 @@
+*pycache*
+**/.terraform/*
+*.tfstate
+**/*.zip
+*.zip
+*lib*
+*target*
