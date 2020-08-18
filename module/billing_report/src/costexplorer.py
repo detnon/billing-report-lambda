@@ -3,13 +3,15 @@ import json
 
 
 class CostExplorer:
-    def __init__(self, accounts_ssm_name, role_ssm_name, start, end):
-        self.ssm_secret = role_ssm_name
-        self.ssm_accounts = accounts_ssm_name
-        self.roles = self.retrieve_secrets(self.ssm_secret)
-        self.accounts = self.retrieve_secrets(self.ssm_accounts)
-        self.start_date = start
-        self.end_date = end
+    def __init__(self, role_ssm_name):
+        #self.ssm_secret = role_ssm_name
+        # self.ssm_accounts = accounts_ssm_name
+
+        self.roles = role_ssm_name
+
+
+        # self.roles = self.retrieve_secrets(self.ssm_secret)
+        # self.accounts = self.retrieve_secrets(self.ssm_accounts)
 
     def assume_billing_role(self, roles):
         client = boto3.client("sts")
@@ -47,21 +49,11 @@ class CostExplorer:
         creds = self.assume_billing_role(self.roles)
         return self.new_client("ce", creds[0], creds[1], creds[2])
 
-    def build_results(self):
-        cost_results = []
-        for account in self.accounts:
-            cost = {}
-            response = self.create_cost_explorer_service().get_cost_and_usage(
-                TimePeriod={"Start": self.start_date, "End": self.end_date},
-                Granularity="MONTHLY",
-                Metrics=["UnblendedCost"],
-                Filter={
-                    "Dimensions": {
-                        "Key": "LINKED_ACCOUNT",
-                        "Values": [account["AccountID"]],
-                    }
-                },
-            )
-            cost.update({account["AccountName"]: response["ResultsByTime"]})
-            cost_results.append(cost)
-        return cost_results
+    def create_service(self,service):
+        creds = self.assume_billing_role(self.roles)
+        return self.new_client(service, creds[0], creds[1], creds[2])
+
+    def list_child_accounts(self):
+        return self.create_org_service("organizaions").list_accounts_for_parent(
+            ParentId='371988484697',
+            MaxResults=999)
